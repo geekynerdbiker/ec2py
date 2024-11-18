@@ -2,8 +2,8 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
-from .models import Diary
-from .serializers import DiarySerializer, UserRegistrationSerializer, UserLoginSerializer
+from .models import Diary, Post, Comment
+from .serializers import DiarySerializer, UserRegistrationSerializer, UserLoginSerializer, PostSerializer, CommentSerializer
 
 
 # 회원가입 API
@@ -65,3 +65,58 @@ class DiaryDeleteAPIView(generics.DestroyAPIView):
     # 현재 사용자 소유의 일기만 삭제 가능하도록 필터링
     def get_queryset(self):
         return Diary.objects.filter(user=self.request.user)
+
+class PostCreateAPIView(generics.CreateAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+# 게시글 목록 조회 API
+class PostListAPIView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Post.objects.all()
+
+
+# 게시글 수정 API
+class PostUpdateAPIView(generics.UpdateAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Post.objects.filter(user=self.request.user)
+
+
+# 게시글 삭제 API
+class PostDeleteAPIView(generics.DestroyAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Post.objects.filter(user=self.request.user)
+
+
+# 댓글 등록 API
+class CommentCreateAPIView(generics.CreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+# 특정 게시글의 댓글 목록 조회 API
+class CommentListAPIView(generics.ListAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        post_id = self.kwargs.get("post_id")
+        return Comment.objects.filter(post_id=post_id)
